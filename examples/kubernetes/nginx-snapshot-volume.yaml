@@ -1,0 +1,67 @@
+# Nginx pod with a new volume pre-populated with data from a snapshot object using IntelliFlash CSI driver
+#
+# $ kubectl apply -f examples/kubernetes/nginx-snapshot-volume.yaml
+#
+
+
+# --------------------------------------
+# IntelliFlash CSI Driver - Storage Class
+# --------------------------------------
+
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: intelliflash-csi-block-driver-cs-nginx-dynamic
+provisioner: intelliflash-csi-block-driver.intelliflash.com
+parameters:
+  #project: csi # to overwrite "defaultProject" in config secret
+  #dataIp: 10.3.199.252        # to overwrite "defaultDataIp" in config secret
+---
+
+
+# ------------------------------------------------------------------------------------------
+# IntelliFlash CSI Driver - Persistent Volume Claim - pre-populated with data from a snapshot
+# ------------------------------------------------------------------------------------------
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: intelliflash-csi-block-driver-pvc-nginx-snapshot-restore
+spec:
+  storageClassName: intelliflash-csi-block-driver-cs-nginx-dynamic
+  dataSource:
+    kind: VolumeSnapshot
+    apiGroup: snapshot.storage.k8s.io
+    name: snapshot-test # snapshots created by ./take-snapshot.yaml
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+---
+
+
+# ---------
+# Nginx pod
+# ---------
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-persistent-volume-snapshot-restore
+spec:
+  containers:
+    - image: nginx
+      imagePullPolicy: IfNotPresent
+      name: nginx
+      ports:
+        - containerPort: 80
+          protocol: TCP
+      volumeMounts:
+        - mountPath: /usr/share/nginx/html
+          name: intelliflash-csi-block-driver-data
+  volumes:
+    - name: intelliflash-csi-block-driver-data
+      persistentVolumeClaim:
+        claimName: intelliflash-csi-block-driver-pvc-nginx-snapshot-restore
+        readOnly: false

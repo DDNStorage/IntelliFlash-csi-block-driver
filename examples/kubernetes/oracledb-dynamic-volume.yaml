@@ -1,0 +1,73 @@
+# Oracledb pod with dynamic storage creation using IntelliFlash CSI driver
+#
+# $ kubectl apply -f examples/kubernetes/oracledb-dynamic-volume.yaml
+#
+# ---------------------------------------
+# IntelliFlash CSI Driver - Storage Class
+# ---------------------------------------
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: intelliflash-csi-block-driver-sc-oracledb-dynamic
+provisioner: intelliflash-csi-block-driver.intelliflash.com
+allowVolumeExpansion: true
+---
+
+# ------------------------------------------------
+# IntelliFlash CSI Driver - Persistent Volume Claim
+# ------------------------------------------------
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: intelliflash-csi-block-driver-pvc-oracledb-dynamic
+  labels:
+    app: oracledb
+spec:
+  storageClassName: intelliflash-csi-block-driver-sc-oracledb-dynamic
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 20Gi
+---
+# ----------------
+# Oracledb service
+# ----------------
+apiVersion: v1
+kind: Service
+metadata:
+ name: oracledb
+spec:
+ type: LoadBalancer
+ selector:
+   app: oracledb
+ ports:
+   - name: client
+     protocol: TCP
+     port: 1521
+     nodePort: 31521
+ selector:
+   app: oracledb
+---
+# --------------------------
+# Pod to change volume owner
+# --------------------------
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: oracledb-dynamic-volume-permission-change
+spec:
+  restartPolicy: OnFailure
+  containers:
+  - image: busybox
+    name: volume-mount-hack
+    command: ["sh", "-c", "chown -R 54321:54321 /ORCL && sleep 9999999999d"]
+    # args: ["while true; do sleep 30; done;"]
+    volumeMounts:
+    - name: data
+      mountPath: /ORCL
+  volumes:
+    - name: data
+      persistentVolumeClaim:
+        claimName: intelliflash-csi-block-driver-pvc-oracledb-dynamic

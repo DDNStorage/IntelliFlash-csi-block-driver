@@ -1,0 +1,40 @@
+# -------------------
+# Oracledb deployment
+# -------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orcldb
+  labels:
+    app: oracledb
+spec:
+  selector:
+    matchLabels:
+      app: oracledb
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: oracledb
+    spec:
+      containers:
+      - image: store/oracle/database-enterprise:12.2.0.1
+        name: orcldb
+        ports:
+        - containerPort: 1521
+          name: orcldb
+        volumeMounts:
+        - name: data
+          mountPath: /ORCL
+      imagePullSecrets:
+        - name: oradocreg
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 54321
+        fsGroup: 54321
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: intelliflash-csi-block-driver-pvc-oracledb-dynamic
+---

@@ -1,0 +1,45 @@
+# ------------------------------------------------------------------------------------------
+# IntelliFlash CSI Driver - Persistent Volume Claim cloned from another PVC
+# ------------------------------------------------------------------------------------------
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: intelliflash-csi-block-driver-pvc-nginx-dynamic-clone
+spec:
+  storageClassName: intelliflash-csi-block-driver-cs-nginx-dynamic
+  dataSource:
+    kind: PersistentVolumeClaim
+    apiGroup: ""
+    name: intelliflash-csi-block-driver-pvc-nginx-dynamic # pvc name
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+---
+
+# ---------
+# Nginx pod
+# ---------
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-dynamic-volume-clone
+spec:
+  containers:
+    - image: nginx
+      imagePullPolicy: IfNotPresent
+      name: nginx
+      ports:
+        - containerPort: 80
+          protocol: TCP
+      volumeMounts:
+        - mountPath: /usr/share/nginx/html
+          name: intelliflash-csi-block-driver-data-clone
+  volumes:
+    - name: intelliflash-csi-block-driver-data-clone
+      persistentVolumeClaim:
+        claimName: intelliflash-csi-block-driver-pvc-nginx-dynamic-clone
+        readOnly: false

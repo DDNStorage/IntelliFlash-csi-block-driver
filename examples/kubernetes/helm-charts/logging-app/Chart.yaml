@@ -1,0 +1,5 @@
+apiVersion: v2
+name: elk-auto
+description: A Helm chart for deploying logging app with elasticSearch and logstash
+type: application
+version: 0.1.0

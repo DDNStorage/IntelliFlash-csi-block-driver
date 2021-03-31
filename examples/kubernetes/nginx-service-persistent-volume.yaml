@@ -1,0 +1,120 @@
+# Service for nginx pod with pre provisioned storage using IntelliFlash CSI driver
+#
+# $ kubectl apply -f examples/kubernetes/nginx-service-persistent-volume.yaml
+#
+
+
+# --------------------------------------
+# IntelliFlash CSI Driver - Storage Class
+# --------------------------------------
+
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: intelliflash-csi-block-driver-cs-nginx
+provisioner: intelliflash-csi-block-driver.intelliflash.com
+#mountOptions:                 # list of options for `mount` command
+#  - noatime                   #
+parameters:
+  #project: csi # to overwrite "defaultProject" in config secret
+  #dataIp: 10.3.199.252        # to overwrite "defaultDataIp" in config secret
+---
+
+
+# ------------------------------------------
+# IntelliFlash CSI Driver - Persistent Volume
+# ------------------------------------------
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: intelliflash-csi-block-driver-pv-nginx
+spec:
+  storageClassName: intelliflash-csi-block-driver-cs-nginx-persistent
+  accessModes:
+    - ReadWriteMany
+  capacity:
+    storage: 1Gi
+  csi:
+    driver: intelliflash-csi-block-driver.intelliflash.com
+    volumeHandle: array1:csi-block-test1:nginx-persistent
+  #mountOptions:  # list of options for `mount` command
+  #  - noatime    #
+---
+
+
+# ------------------------------------------------
+# IntelliFlash CSI Driver - Persistent Volume Claim
+# ------------------------------------------------
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: intelliflash-csi-block-driver-pvc-nginx
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+  selector:
+    matchExpressions:
+      - key: name
+        operator: In
+        values: ['intelliflash-csi-block-driver-pv-nginx']
+---
+
+
+# ---------
+# Nginx pod
+# ---------
+
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: nginx-persistent-volume
+  labels:
+    app: nginx-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx-service
+  template:
+    metadata:
+      labels:
+        app: nginx-service
+    spec:
+      containers:
+        - image: nginx
+          imagePullPolicy: IfNotPresent
+          name: nginx
+          ports:
+            - containerPort: 80
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /usr/share/nginx/html
+              name: intelliflash-csi-block-driver-data
+      volumes:
+        - name: intelliflash-csi-block-driver-data
+          persistentVolumeClaim:
+            claimName: intelliflash-csi-block-driver-pvc-nginx
+            readOnly: false
+---
+
+
+# -----------------
+# Service for nginx
+# -----------------
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: nginx-service-persistent-volume
+spec:
+  selector:
+    app: nginx-service
+  ports:
+  - protocol: TCP
+    port: 8888
+    targetPort: 80

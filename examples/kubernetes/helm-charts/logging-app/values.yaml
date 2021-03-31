@@ -1,0 +1,7 @@
+global:
+  hostIp: 127.0.0.1
+ 
+ports:
+  elasticsearch: 31996
+  kibana: 31997
+  logstash: 31998

@@ -1,0 +1,54 @@
+# mysql pod with dynamic storage creation using IntelliFlash CSI driver
+#
+# $ kubectl apply -f examples/kubernetes/mysql-dynamic-volume.yaml
+#
+# --------------------------------------
+# IntelliFlash CSI Driver - Storage Class
+# --------------------------------------
+
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: intelliflash-csi-block-driver-sc-mysql-dynamic
+provisioner: intelliflash-csi-block-driver.intelliflash.com
+allowVolumeExpansion: true
+                                                    # Format: [accessMode][no_root_squash(optional)]@[address]/[mask]
+                                                    # accessMode and mask are optional, default mode is rw.
+---
+
+# ------------------------------------------------
+# IntelliFlash CSI Driver - Persistent Volume Claim
+# ------------------------------------------------
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: intelliflash-csi-block-driver-pvc-mysql-dynamic
+  labels:
+    app: wordpress
+spec:
+  storageClassName: intelliflash-csi-block-driver-sc-mysql-dynamic
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 20Gi
+
+
+# -----------------------
+# Wordpress mysql service
+# -----------------------
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress-mysql
+  labels:
+    app: wordpress
+spec:
+  ports:
+    - port: 3306
+  selector:
+    app: wordpress
+    tier: mysql
+  clusterIP: None
+

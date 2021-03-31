@@ -1,0 +1,56 @@
+# Redis pod with dynamic storage creation using IntelliFlash CSI driver
+#
+# $ kubectl apply -f examples/kubernetes/reids-dynamic-volume.yaml
+#
+# --------------------------------------
+# IntelliFlash CSI Driver - Storage Class
+# --------------------------------------
+
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: intelliflash-csi-block-driver-sc-redis-dynamic
+provisioner: intelliflash-csi-block-driver.intelliflash.com
+allowVolumeExpansion: true
+---
+
+# ------------------------------------------------
+# IntelliFlash CSI Driver - Persistent Volume Claim
+# ------------------------------------------------
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: intelliflash-csi-block-driver-pvc-redis-dynamic
+  labels:
+    app: wordpress
+spec:
+  storageClassName: intelliflash-csi-block-driver-sc-redis-dynamic
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 20Gi
+
+---
+
+# -------------
+# Redis service
+# -------------
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-master
+  labels:
+    app: redis
+    role: master
+    tier: backend
+spec:
+  ports:
+  - name: redis
+    port: 6379
+    targetPort: 6379
+  selector:
+    app: redis
+    role: master
+    tier: backend
+---

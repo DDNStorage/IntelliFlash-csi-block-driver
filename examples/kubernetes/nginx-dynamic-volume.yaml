@@ -1,0 +1,71 @@
+# Nginx pod with dynamic storage creation using IntelliFlash CSI driver
+#
+# $ kubectl apply -f examples/kubernetes/nginx-dynamic-volume.yaml
+#
+
+
+# --------------------------------------
+# IntelliFlash CSI Driver - Storage Class
+# --------------------------------------
+
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: intelliflash-csi-block-driver-cs-nginx-dynamic
+provisioner: intelliflash-csi-block-driver.intelliflash.com
+allowVolumeExpansion: true
+# volumeBindingMode: Immediate
+# allowedTopologies:
+# - matchLabelExpressions:
+#   - key: topology.kubernetes.io/zone
+#     values:
+#     - zone-1
+# parameters:
+#   configName: nstor-box3
+  #project: customProject # to overwrite "defaultProject" config property [project]
+  #dataIp: 20.20.20.253              # to overwrite "defaultDataIp" config property
+---
+
+
+# ------------------------------------------------
+# IntelliFlash CSI Driver - Persistent Volume Claim
+# ------------------------------------------------
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: intelliflash-csi-block-driver-pvc-nginx-dynamic
+spec:
+  storageClassName: intelliflash-csi-block-driver-cs-nginx-dynamic
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+---
+
+
+# ---------
+# Nginx pod
+# ---------
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-dynamic-volume
+spec:
+  containers:
+    - image: nginx
+      imagePullPolicy: IfNotPresent
+      name: nginx
+      ports:
+        - containerPort: 80
+          protocol: TCP
+      volumeMounts:
+        - mountPath: /usr/share/nginx/html
+          name: intelliflash-csi-block-driver-data
+  volumes:
+    - name: intelliflash-csi-block-driver-data
+      persistentVolumeClaim:
+        claimName: intelliflash-csi-block-driver-pvc-nginx-dynamic
+        readOnly: false

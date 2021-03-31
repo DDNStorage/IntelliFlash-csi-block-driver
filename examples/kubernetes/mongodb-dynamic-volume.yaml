@@ -1,0 +1,60 @@
+# Mongodb pod with dynamic storage creation using IntelliFlash CSI driver
+#
+# $ kubectl apply -f examples/kubernetes/mongodb-dynamic-volume.yaml
+#
+
+
+# ---------------------------------------
+# IntelliFlash CSI Driver - Storage Class
+# ---------------------------------------
+
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: intelliflash-csi-block-driver-sc-mongodb-dynamic
+provisioner: intelliflash-csi-block-driver.intelliflash.com
+allowVolumeExpansion: true
+# volumeBindingMode: Immediate
+# allowedTopologies:
+# - matchLabelExpressions:
+#   - key: topology.kubernetes.io/zone
+#     values:
+#     - zone-1
+# parameters:
+#   configName: nstor-box3
+  #project: customProject # to overwrite "defaultProject" config property [project]
+  #dataIp: 20.20.20.253              # to overwrite "defaultDataIp" config property
+---
+
+
+# -------------------------------------------------
+# IntelliFlash CSI Driver - Persistent Volume Claim
+# -------------------------------------------------
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: intelliflash-csi-block-driver-pvc-mongodb-dynamic
+spec:
+  storageClassName: intelliflash-csi-block-driver-sc-mongodb-dynamic
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+---
+
+# ---------------
+# Mongodb service
+# ---------------
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo
+  labels:
+    app: mongo
+spec:
+  clusterIP: None
+  selector:
+    app: mongo
+---

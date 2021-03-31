@@ -1,0 +1,85 @@
+
+# --------------------------------------
+# IntelliFlash CSI Driver - Storage Class
+# --------------------------------------
+
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: intelliflash-csi-block-driver-cs-logstash-dynamic
+provisioner: intelliflash-csi-block-driver.intelliflash.com
+allowVolumeExpansion: true
+---
+# ------------------------------------------------
+# IntelliFlash CSI Driver - Persistent Volume Claim
+# ------------------------------------------------
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: intelliflash-csi-block-driver-pvc-logstash-dynamic
+spec:
+  storageClassName: intelliflash-csi-block-driver-cs-logstash-dynamic
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+---
+# ----------------------
+# Logging app deployment
+# ----------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-auto
+  labels:
+    name: app-auto
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: app-auto
+  template:
+    metadata:
+      labels:
+        name: app-auto
+    spec:
+      containers:
+      - name: app-auto
+        image: sladesoftware/log-application:latest
+        volumeMounts:
+        - name: log-output
+          mountPath: /tmp/
+      - name: beat-auto
+        image: elastic/filebeat:7.8.0
+        env:
+        - name: LOGSTASH_HOSTS
+          value: {{ .Values.global.hostIp }}:{{ .Values.ports.logstash }}
+        args: [
+         "-c", "/etc/filebeat/filebeat.yml",
+         "-e"
+        ]
+        volumeMounts:
+        - name: log-output
+          mountPath: /tmp/
+        - name: beat-config
+          mountPath: /etc/filebeat/
+      volumes:
+      - name: log-output
+        persistentVolumeClaim:
+          claimName: intelliflash-csi-block-driver-pvc-logstash-dynamic
+          readOnly: false
+      - name: beat-config
+        configMap:
+          name: beat-config
+          items:
+          - key: filebeat.yml
+            path: filebeat.yml
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: beat-config
+data:
+  filebeat.yml: |
+{{ .Files.Get "filebeat.yml" | indent 4 }}

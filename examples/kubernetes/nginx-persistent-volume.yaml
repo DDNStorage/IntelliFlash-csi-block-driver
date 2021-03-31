@@ -1,0 +1,92 @@
+# Nginx pod with pre provisioned storage using IntelliFlash CSI driver
+#
+# $ kubectl apply -f examples/kubernetes/nginx-persistent-volume.yaml
+#
+
+
+# --------------------------------------
+# IntelliFlash CSI Driver - Storage Class
+# --------------------------------------
+
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: intelliflash-csi-block-driver-cs-nginx-persistent
+provisioner: intelliflash-csi-block-driver.intelliflash.com
+parameters:
+  #project: customProject # to overwrite "defaultProject" config property [project]
+  #dataIp: 20.20.20.253              # to overwrite "defaultDataIp" config property
+---
+
+
+# ------------------------------------------
+# IntelliFlash CSI Driver - Persistent Volume
+# ------------------------------------------
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: intelliflash-csi-block-driver-pv-nginx-persistent
+  labels:
+    name: intelliflash-csi-block-driver-pv-nginx-persistent
+spec:
+  storageClassName: intelliflash-csi-block-driver-cs-nginx-persistent
+  accessModes:
+    - ReadWriteMany
+  capacity:
+    storage: 1Gi
+  csi:
+    driver: intelliflash-csi-block-driver.intelliflash.com
+    # volumeHandle should be of the following format: <configName>:<projectName>:<volumeName>
+    volumeHandle: array1:csi-block-test1:nginx-persistent
+  #mountOptions:  # list of options for `mount` command
+  #  - noatime    #
+---
+
+
+# ------------------------------------------------
+# IntelliFlash CSI Driver - Persistent Volume Claim
+# ------------------------------------------------
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: intelliflash-csi-block-driver-pvc-nginx-persistent
+spec:
+  storageClassName: intelliflash-csi-block-driver-cs-nginx-persistent
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+  selector:
+    matchLabels:
+      # to create 1-1 relationship for pod - persistent volume use unique labels
+      name: intelliflash-csi-block-driver-pv-nginx-persistent
+---
+
+
+# ---------
+# Nginx pod
+# ---------
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-persistent-volume
+spec:
+  containers:
+    - image: nginx
+      imagePullPolicy: IfNotPresent
+      name: nginx
+      ports:
+        - containerPort: 80
+          protocol: TCP
+      volumeMounts:
+        - mountPath: /usr/share/nginx/html
+          name: intelliflash-csi-block-driver-data
+  volumes:
+    - name: intelliflash-csi-block-driver-data
+      persistentVolumeClaim:
+        claimName: intelliflash-csi-block-driver-pvc-nginx-persistent
+        readOnly: false

@@ -1,0 +1,19 @@
+# intelliflash-csi-block-driver config file to create k8s secret
+#
+# $ kubectl create secret generic intelliflash-csi-block-driver-config \
+#   --from-file=deploy/kubernetes/intelliflash-csi-block-driver-config.yaml
+#
+
+arrays:
+  array:
+    restIp: https://10.204.86.70:443   # [required] IntelliFlash REST API endpoint
+    username: admin                    # [required] IntelliFlash REST API username
+    password: t                        # [required] IntelliFlash REST API password
+    defaultProject: csi-block-chap     # default project name for driver's volume
+    defaultDataIp: 10.204.86.71        # default IntelliFlash data IP
+
+useChapAuth: true                           # Defines whether CHAP authentication is enabled
+chapUser: admin                             # CHAP username
+chapSecret: chapsecretif                    # CHAP secret
+initiatorGroup: csi-block-chap-initiator-group  # Initiator group associated with project, required for CHAP
+debug: true                                 # more logs

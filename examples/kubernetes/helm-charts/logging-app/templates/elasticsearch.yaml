@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: es-auto
+  labels:
+    name: es-auto
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: es-auto
+  template:
+    metadata:
+      labels:
+        name: es-auto
+    spec:
+      containers:
+        - name: es-auto
+          image: elasticsearch:7.8.0
+          ports:
+          - containerPort: 9200
+            name: http
+          env:
+          - name: discovery.type
+            value: single-node
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    name: es-auto
+  name: es-auto
+spec:
+  selector:
+    name: es-auto
+  type: NodePort
+  ports:
+    - nodePort: {{ .Values.ports.elasticsearch }}
+      port: 9200
+      protocol: TCP
+      targetPort: 9200

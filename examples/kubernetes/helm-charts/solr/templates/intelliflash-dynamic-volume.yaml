@@ -1,0 +1,49 @@
+# ---------------------------------------
+# IntelliFlash CSI Driver - Storage Class
+# ---------------------------------------
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: intelliflash-csi-block-driver-sc-solr-dynamic
+provisioner: intelliflash-csi-block-driver.intelliflash.com
+allowVolumeExpansion: true
+---
+
+# ------------------------------------------------
+# IntelliFlash CSI Driver - Persistent Volume Claim
+# ------------------------------------------------
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: intelliflash-csi-block-driver-pvc-solr-dynamic
+  labels:
+    app: solr
+spec:
+  storageClassName: intelliflash-csi-block-driver-sc-solr-dynamic
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 20Gi
+---
+# --------------------------
+# Pod to change volume owner
+# --------------------------
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: solr-dynamic-volume-permission-change
+spec:
+  restartPolicy: OnFailure
+  containers:
+  - image: busybox
+    name: solr-volume-mount
+    command: ["sh", "-c", "chown -R 8983:8983 /solr-data && sleep 9999999999d"]
+    volumeMounts:
+    - name: data
+      mountPath: /solr-data
+  volumes:
+    - name: data
+      persistentVolumeClaim:
+        claimName: intelliflash-csi-block-driver-pvc-solr-dynamic

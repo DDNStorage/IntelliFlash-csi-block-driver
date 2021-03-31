@@ -1,0 +1,92 @@
+# Service for nginx pods with dynamically storage creation using IntelliFlash CSI driver
+#
+# $ kubectl apply -f ./examples/nginx-service-dynamic-volume.yaml
+#
+
+
+# --------------------------------------
+# IntelliFlash CSI Driver - Storage Class
+# --------------------------------------
+
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: intelliflash-csi-block-driver-cs-nginx-dynamic
+provisioner: intelliflash-csi-block-driver.intelliflash.com
+parameters:
+  #project: csi # to overwrite "defaultProject" in config secret
+  #dataIp: 10.3.199.252        # to overwrite "defaultDataIp" in config secret
+---
+
+
+# ------------------------------------------------
+# IntelliFlash CSI Driver - Persistent Volume Claim
+# ------------------------------------------------
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: intelliflash-csi-block-driver-pvc-nginx-dynamic
+spec:
+  storageClassName: intelliflash-csi-block-driver-cs-nginx-dynamic
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+---
+
+
+# ---------
+# Nginx pods
+# ---------
+
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: nginx-dynamic-volume
+  labels:
+    app: nginx-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx-service
+  template:
+    metadata:
+      labels:
+        app: nginx-service
+    spec:
+      containers:
+        - image: nginx
+          imagePullPolicy: IfNotPresent
+          name: nginx
+          ports:
+            - containerPort: 80
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /usr/share/nginx/html
+              name: intelliflash-csi-block-driver-data
+      volumes:
+        - name: intelliflash-csi-block-driver-data
+          persistentVolumeClaim:
+            claimName: intelliflash-csi-block-driver-pvc-nginx-dynamic
+            readOnly: false
+---
+
+
+# -----------------
+# Service for nginx
+# -----------------
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: nginx-service-dynamic-volume
+spec:
+  selector:
+    app: nginx-service
+  ports:
+  - protocol: TCP
+    port: 8888
+    targetPort: 80
