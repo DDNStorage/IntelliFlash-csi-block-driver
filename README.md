@@ -46,7 +46,7 @@ The Intelliflash Container Storage Interface (CSI) Block Driver provides a CSI i
 
 2. Clone driver repository
    ```bash
-   git clone https://bitbucket.eng-us.tegile.com/scm/eco/intelliflash-csi-block-driver.git
+   git clone https://github.com/DDNStorage/intelliflash-csi-block-driver.git
    cd intelliflash-csi-block-driver
    ```
 3. Edit `deploy/kubernetes/intelliflash-csi-block-driver-config.yaml` file. Driver configuration example:
