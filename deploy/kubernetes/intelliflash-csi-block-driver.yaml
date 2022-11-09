@@ -264,7 +264,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: driver
-          image: 10.204.86.117:5000/intelliflash-csi-block-driver:master
+          image: 10.204.86.117:5000/intelliflash-csi-block-driver:v1.0.0
           imagePullPolicy: IfNotPresent
           args:
             - --nodeid=$(KUBE_NODE_NAME)
@@ -390,7 +390,7 @@ spec:
             capabilities:
               add: ['SYS_ADMIN']
             allowPrivilegeEscalation: true
-          image: 10.204.86.117:5000/intelliflash-csi-block-driver:master
+          image: 10.204.86.117:5000/intelliflash-csi-block-driver:v1.0.0
           imagePullPolicy: IfNotPresent
           args:
             - --nodeid=$(KUBE_NODE_NAME)
