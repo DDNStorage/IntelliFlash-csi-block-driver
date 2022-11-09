@@ -21,7 +21,10 @@ allowVolumeExpansion: true
 #     values:
 #     - zone-1
 # parameters:
-#   configName: nstor-box3
+#   targetGroup: csi-new-no-chap
+#   target: csi-new-no-chap
+#   inheritProjectSettings: "false"
+  # configName: nstor-box3
   #project: customProject # to overwrite "defaultProject" config property [project]
   #dataIp: 20.20.20.253              # to overwrite "defaultDataIp" config property
 ---

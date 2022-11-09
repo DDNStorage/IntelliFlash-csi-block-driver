@@ -4,22 +4,22 @@
 The Intelliflash Container Storage Interface (CSI) Block Driver provides a CSI interface used by Container Orchestrators (CO) to manage the lifecycle of Intelliflash volumes over iSCSI protocol.
 
 ## Feature List
-|Feature|Feature Status|CSI Driver Version|CSI Spec Version|Kubernetes Version|
-|--- |--- |--- |--- |--- |
-|Static Provisioning|GA|>= v1.0.0|>= v1.0.0|>=1.13|
-|Dynamic Provisioning|GA|>= v1.0.0|>= v1.0.0|>=1.13|
-|RW mode|GA|>= v1.0.0|>= v1.0.0|>=1.13|
-|RO mode|GA|>= v1.0.0|>= v1.0.0|>=1.13|
-|Creating and deleting snapshot|GA|>= v1.2.0|>= v1.0.0|>=1.17|
-|Provision volume from snapshot|GA|>= v1.2.0|>= v1.0.0|>=1.17|
-|Provision volume from another volume|GA|>= v1.3.0|>= v1.0.0|>=1.17|
-|List snapshots of a volume|Beta|>= v1.2.0|>= v1.0.0|>=1.17|
-|Expand volume|GA|>= v1.3.0|>= v1.1.0|>=1.16|
-|Access list for volume (NFS only)|GA|>= v1.3.0|>= v1.0.0|>=1.13|
-|Topology|Beta|>= v1.4.0|>= v1.0.0|>=1.17|
-|Raw block device|In development|future|>= v1.0.0|>=1.14|
-|StorageClass Secrets|Beta|>= v1.3.0|>=1.0.0|>=1.13|
-|Mount options|GA|>=v1.0.0|>=v1.0.0|>=v1.13|
+|Feature|Feature Status|CSI Driver Version|CSI Spec Version|Kubernetes Version|Intelliflash Version|
+|--- |--- |--- |--- |--- |--- |
+|Static Provisioning|GA|>= v1.0.0|>= v1.0.0|>=1.13|>=3.11.2|
+|Dynamic Provisioning|GA|>= v1.0.0|>= v1.0.0|>=1.13|>=3.11.2|
+|RW mode|GA|>= v1.0.0|>= v1.0.0|>=1.13|>=3.11.2|
+|RO mode|GA|>= v1.0.0|>= v1.0.0|>=1.13|>=3.11.2|
+|Creating and deleting snapshot|GA|>= v1.2.0|>= v1.0.0|>=1.20|>=3.11.2|
+|Provision volume from snapshot|GA|>= v1.2.0|>= v1.0.0|>=1.20|>=3.11.2|
+|Provision volume from another volume|GA|>= v1.3.0|>= v1.0.0|>=1.20|>=3.11.2|
+|List snapshots of a volume|Beta|>= v1.2.0|>= v1.0.0|>=1.20|>=3.11.2|
+|Expand volume|GA|>= v1.3.0|>= v1.1.0|>=1.16|>=3.11.2|
+|Access list for volume (NFS only)|GA|>= v1.3.0|>= v1.0.0|>=1.13|>=3.11.2|
+|Topology|Beta|>= v1.4.0|>= v1.0.0|>=1.17|>=3.11.2|
+|Raw block device|In development|future|>= v1.0.0|>=1.14|>=3.11.2|
+|StorageClass Secrets|Beta|>= v1.3.0|>=1.0.0|>=1.13|>=3.11.2|
+|Mount options|GA|>=v1.0.0|>=v1.0.0|>=v1.13|>=3.11.2|
 
 ## Requirements
 
@@ -46,25 +46,27 @@ The Intelliflash Container Storage Interface (CSI) Block Driver provides a CSI i
 
 2. Clone driver repository
    ```bash
-   git clone https://github.com/DDNStorage/intelliflash-csi-block-driver.git
+   git clone https://bitbucket.eng-us.tegile.com/eco/intelliflash-csi-block-driver.git
    cd intelliflash-csi-block-driver
    ```
 3. Edit `deploy/kubernetes/intelliflash-csi-block-driver-config.yaml` file. Driver configuration example:
-   ```yaml
-  arrays:
-    array1:
-      restIp: https://172.27.10.30:443   # [required] IntelliFlash REST API endpoint
-      username: admin                    # [required] IntelliFlash REST API username
-      password: t                        # [required] IntelliFlash REST API password
-      defaultProject: csi-block          # default project name for driver's volume
-      defaultDataIp: 172.27.10.30        # default IntelliFlash data IP
 
-  useChapAuth: true                           # Defines whether CHAP authentication is enabled
-  chapUser: admin                             # CHAP username
-  chapSecret: chapsecretif                    # CHAP secret
-  initiatorGroup: csi-block-chap-initiator-group  # Initiator group associated with project, required for CHAP
-  debug: true
-   ```
+```yaml
+arrays:
+  array1:
+    restIp: https://172.27.10.30:443   # [required] IntelliFlash REST API endpoint
+    username: admin                    # [required] IntelliFlash REST API username
+    password: t                        # [required] IntelliFlash REST API password
+    defaultProject: csi-block          # default project name for driver's volume
+    defaultDataIp: 172.27.10.30        # default IntelliFlash data IP
+
+useChapAuth: true                           # Defines whether CHAP authentication is enabled
+chapUser: admin                             # CHAP username
+chapSecret: chapsecretif                    # CHAP secret
+initiatorGroup: csi-block-chap-initiator-group  # Initiator group associated with project, required for CHAP
+debug: true
+```
+
 4. Create Kubernetes secret from the file:
    ```bash
    kubectl create secret generic intelliflash-csi-block-driver-config --from-file=deploy/kubernetes/intelliflash-csi-block-driver-config.yaml
@@ -257,6 +259,65 @@ Example:
   chapUser: admin                             # CHAP username
   chapSecret: chapsecretif                    # CHAP secret
   initiatorGroup: csi-chap-initiator-group    # Initiator group associated with project, required for CHAP
+```
+
+## InheritProjectSettings option
+
+This option tells the driver whether it should inherit iSCSI options from the project or use what is provided via storage class parameters or config. If this option is set to `true`, no additional settings are required. If you want to use a separate iSCSI target/target group, use `false` and provide the following parameters. For storageClass parameters:
+- target
+- targetGroup
+- iSCSIPort (optional)
+
+Example storageClass:
+
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: intelliflash-csi-block-driver-pvc-nginx-dynamic-clone
+spec:
+  storageClassName: intelliflash-csi-block-driver-cs-nginx-dynamic
+  dataSource:
+    kind: PersistentVolumeClaim
+    apiGroup: ""
+    name: intelliflash-csi-block-driver-pvc-nginx-dynamic # pvc name
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+parameters:
+  targetGroup: non-default
+  target: non-default
+  inheritProjectSettings: "false"
+```
+
+
+For config values a prefix 'Default' is added to each parameter, as follows:
+- DefaultTarget
+- DefaultTargetGroup
+- DefaultISCSIPort
+
+Example config file:
+```yaml
+arrays:
+  array1:
+    restIp: https://172.27.10.30:443   # [required] IntelliFlash REST API endpoint
+    username: admin                    # [required] IntelliFlash REST API username
+    password: t                        # [required] IntelliFlash REST API password
+    defaultProject: csi-block          # default project name for driver's volume
+    defaultDataIp: 172.27.10.30        # default IntelliFlash data IP
+    inheritProjectSettings: false      # defines whether the volume should inherit iscsi mapping from the project or create depending on csi config
+    defaultTarget: csi                 # default target to use when inheritProjectSettings=false
+    defaultTargetGroup: csi            # default target group to use when inheritProjectSettings=false
+    defaultHostGroup: csi              # default host group to use when inheritProjectSettings=false
+    defaultISCSIPort: 3260             # default iSCSI port to use when inheritProjectSettings=false
+
+useChapAuth: true                           # Defines whether CHAP authentication is enabled
+chapUser: admin                             # CHAP username
+chapSecret: chapsecretif                    # CHAP secret
+initiatorGroup: csi-block-chap-initiator-group  # Initiator group associated with project, required for CHAP
+debug: true
 ```
 
 ## Uninstall

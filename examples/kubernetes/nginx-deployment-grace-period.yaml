@@ -1,0 +1,73 @@
+# Nginx pod with dynamic storage creation using NexentaStor Block CSI driver
+#
+# $ kubectl apply -f examples/kubernetes/nginx-dynamic-volume.yaml
+#
+# --------------------------------------
+# NexentaStor CSI Driver - Storage Class
+# --------------------------------------
+
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: intelliflash-csi-block-driver-sc-nginx-dynamic
+provisioner: intelliflash-csi-block-driver.intelliflash.com
+allowVolumeExpansion: true
+---
+
+# ------------------------------------------------
+# NexentaStor CSI Driver - Persistent Volume Claim
+# ------------------------------------------------
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: intelliflash-block-csi-driver-pvc-nginx-dynamic
+spec:
+  storageClassName: intelliflash-csi-block-driver-sc-nginx-dynamic
+  accessModes:
+    - ReadWriteOnce
+    # - ReadWriteMany
+  # volumeMode: Block
+  resources:
+    requests:
+      storage: 1Gi
+---
+
+# ---------
+# Nginx deployment
+# ---------
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment-dynamic
+  labels:
+    app.kubernetes.io/name: nginx-deployment-dynamic
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nginx-deployment-dynamic
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nginx-deployment-dynamic
+    spec:
+      terminationGracePeriodSeconds: 5
+      containers:
+        - image: nginx
+          imagePullPolicy: IfNotPresent
+          name: nginx
+          command: ["bash"]
+          args: ["-c", "while true; do echo $(date) >> /mountedDisk/datefile; sleep 0.1; done"] #--hdd-noclean
+          ports:
+            - containerPort: 80
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /mountedDisk
+              name: intelliflash-block-csi-driver-data
+      volumes:
+        - name: intelliflash-block-csi-driver-data
+          persistentVolumeClaim:
+            claimName: intelliflash-block-csi-driver-pvc-nginx-dynamic
+            readOnly: false
