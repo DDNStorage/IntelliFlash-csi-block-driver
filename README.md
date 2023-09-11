@@ -21,6 +21,14 @@ The Intelliflash Container Storage Interface (CSI) Block Driver provides a CSI i
 |StorageClass Secrets|Beta|>= v1.3.0|>=1.0.0|>=1.13|>=3.11.2|
 |Mount options|GA|>=v1.0.0|>=v1.0.0|>=v1.13|>=3.11.2|
 
+## Access Modes support
+|Access mode| Supported in version|
+|--- |--- |
+|ReadWriteOnce| >=1.0.0 |
+|ReadOnlyMany| >=1.0.0 |
+|ReadWriteMany| >=1.0.0 |
+|ReadWriteOncePod| >=1.1.0 |
+
 ## Requirements
 
 - Kubernetes cluster must allow privileged pods, this flag must be set for the API server and the kubelet
@@ -380,6 +388,16 @@ Commits should follow [Conventional Commits Spec](https://conventionalcommits.or
 Commit messages which include `feat:` and `fix:` prefixes will be included in CHANGELOG automatically.
 
 ### Build
+
+In order to use private bitbucket packages (go-intelliflash in our case), we need to set git to use ssh instead of https.
+```bash
+git config --global --add url."ssh://git@bitbucket.eng-us.tegile.com:7999/".insteadOf "https://bitbucket.eng-us.tegile.com/scm/"
+```
+
+And set the GOPRIVATE env variable
+```bash
+export GOPRIVATE=bitbucket.eng-us.tegile.com/eco/go-intelliflash
+```
 
 ```bash
 # print variables and help

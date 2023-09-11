@@ -3,19 +3,21 @@
 # $ kubectl create secret generic intelliflash-csi-block-driver-config \
 #   --from-file=deploy/kubernetes/intelliflash-csi-block-driver-config.yaml
 #
+
 arrays:
-  array1:
-    restIp: https://10.204.86.70:443
-    username: admin
-    password: t
-    defaultProject: csi-block-test1
-    defaultDataIp: 10.204.86.71
-    zone: zone-1
-  array2:
-    restIp: https://10.204.86.70:443
-    username: admin
-    password: t
-    defaultProject: csi-block-test2
-    defaultDataIp: 10.204.86.75
-    zone: zone-2
-debug: true
+  array:
+    restIp: https://10.204.86.70:443   # [required] IntelliFlash REST API endpoint
+    username: admin                    # [required] IntelliFlash REST API username
+    password: t                        # [required] IntelliFlash REST API password
+    defaultProject: csi-block-chap     # default project name for driver's volume
+    defaultDataIp: 10.204.86.71        # default IntelliFlash data IP
+    inheritProjectSettings: false      # defines whether the volume should inherit iscsi mapping from the project or create depending on csi config
+    defaultTarget: csi                 # default target to use when inheritProjectSettings=false
+    defaultTargetGroup: csi            # default target to use when inheritProjectSettings=false
+    defaultISCSIPort: 3260             # default iSCSI port to use when inheritProjectSettings=false
+
+# useChapAuth: true                           # Defines whether CHAP authentication is enabled
+# chapUser: admin                             # CHAP username
+# chapSecret: chapsecretif                    # CHAP secret
+# initiatorGroup: csi-block                   # Initiator group associated with project, required for CHAP
+debug: true                                 # more logs
